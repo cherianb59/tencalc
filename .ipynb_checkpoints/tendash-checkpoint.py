@@ -2,10 +2,15 @@ import dash
 from dash import dcc, html, Input, Output ,dash_table
 import dash_daq as daq
 import dash_bootstrap_components as dbc
-import tensim
+
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+
 from flask import Flask
+import numpy as np 
+
+import tensim
+from tenprofiles import *
 
 server = Flask(__name__)
 server.secret_key ='test'
@@ -13,20 +18,10 @@ server.secret_key ='test'
 app = dash.Dash(name = __name__, server = server, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server 
 app.title = "Child Support Formula"
-app.layout = dbc.Container(
-    children=[
-      header,
-      dbc.Row( [ intro ])   ,
-      dbc.Row( [ match_probability ])   ,      
-      dbc.Row( [ match_inputs, par_a_inputs ,par_b_inputs, ])   ,
-      dbc.Row( [ liability_chart ])   ,
-
-    ]
-)
 
 header = html.Div(
         children=[
-        html.P(children="👶", className="header-emoji"),
+        html.P(children="🎾", className="header-emoji"),
                 html.H1(
                     children="Tennis Simulator", className="header-title"
                 ),
@@ -50,7 +45,8 @@ match_probability = dbc.Col(
       )
 
 def slider_range(min,max,step=1):
-  sr = list(range(min,max+1,step))
+  sr = np.around((np.arange(min,max + step,step)),2)
+  
   if sr[-1] != max: sr[-1] = max
   return(sr)
 
@@ -97,7 +93,7 @@ player_b_inputs = dbc.Col(
       )
                 
 set_hist = html.Div(
-            children=dcc.Graph(id="set-hist-chart", ),
+            children=dcc.Graph(id="set-distribution", ),
             className="card",
         )
               
@@ -117,32 +113,32 @@ set_hist = html.Div(
 def simulate_matches(num_set , a_base_p , a_point_streak ,  b_base_p ,  b_point_streak ):
            
     # number of iterations
-    sims = 100
+    sims = 10000
     
     #iterate through matches
     results = []
     #numpy vectoristion is not much faster
     for i,income in enumerate(range(0,sims)):
 
-      match = Match(1, i , player_profiles = [default_player_profile,rf_player_profile])
+      default_player_profile["win_serve_p"] = a_base_p
+      default_player_profile["point_streak_adv"] = a_point_streak
+
+      rf_player_profile["win_serve_p"] = b_base_p
+      rf_player_profile["point_streak_adv"] = b_point_streak
+      match = tensim.Match(1, i , player_profiles = [default_player_profile,rf_player_profile], set_limit = num_set)
       match.run_match()
-      results.append(match.result)
+      results.append(match.a.match)
       del match              
     
     #
-    match_statement = "Player A won {} out of {} matches ({}%)".format([sum(results),sims,float(sum(results))/sims])
+    wins = sum(results)
+    matches_statement = "Player A won {} out of {} matches ({}%)".format(wins,sims,float(wins)/sims)
     
     # Create figure with secondary y-axis
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig = make_subplots()
     
-    # Add traces (lines)
     fig.add_trace(
-        go.Scatter(x=incomes, y=marginal, name="Marginal change in entitlement"),
-        secondary_y=True,
-    )
-
-    fig.add_trace(
-        go.Scatter(x=incomes, y=entitlements, # replace with your own data source
+        go.Scatter(x=[wins], y=[sims], # replace with your own data source
         name="Entitlement"), secondary_y=False,
     )
         
@@ -159,11 +155,7 @@ def simulate_matches(num_set , a_base_p , a_point_streak ,  b_base_p ,  b_point_
 
     # Set y-axes titles   
     fig.update_yaxes(title_text="How much the other parent owes you", tickprefix = '$', tickformat = ',.0f',secondary_y=False)
-    
-    fig.update_yaxes(title_text="", secondary_y=True)
-    fig.update_yaxes(tickformat=",.0%", secondary_y=True)
-    #fig.update_layout(yaxis_tickprefix = '$', yaxis_tickformat = ',.0f', secondary_y=True)
-    
+        
     fig.update_layout(
     legend=dict(
         x=0.7,
@@ -178,9 +170,19 @@ def simulate_matches(num_set , a_base_p , a_point_streak ,  b_base_p ,  b_point_
     )
   )
 
-  )
+
 
     return([matches_statement,fig])
-
+   
+app.layout = dbc.Container(
+    children=[
+      header,
+      dbc.Row( [ intro ])   ,
+      dbc.Row( [ match_probability ])   ,      
+      dbc.Row( [ match_inputs, player_a_inputs,player_b_inputs, ])   ,
+      dbc.Row( [ set_hist ])   ,      
+    ]
+)
+  
 if __name__ == "__main__":
     app.run_server(debug=True,host='0.0.0.0', port=5000)

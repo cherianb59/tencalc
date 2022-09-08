@@ -1,5 +1,5 @@
 import random 
-import * from tenprofiles
+from tenprofiles import *
 
 class Player():
      def __init__(self, game, player_name, initial_player_state , player_profile ):
