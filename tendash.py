@@ -184,5 +184,12 @@ app.layout = dbc.Container(
     ]
 )
   
+from werkzeug.middleware.profiler import ProfilerMiddleware
+import os 
 if __name__ == "__main__":
-    app.run_server(debug=True,host='0.0.0.0', port=5000)
+    if os.getenv("PROFILER", None):
+        app.server.config["PROFILE"] = True
+        app.server.wsgi_app = ProfilerMiddleware(
+            app.server.wsgi_app, sort_by=("cumtime", "tottime"), restrictions=[50]
+        )
+        app.run_server(debug=True,host='0.0.0.0', port=5000)

@@ -101,8 +101,8 @@ class Match():
 
 def calculate_p(a_state, b_state,a_profile,b_profile):    
     base_p = a_profile["win_serve_p"] 
-    base_p += a_state["point_streak"] * a_profile["point_streak_adv"]
-    base_p += a_state["pressure_point"] * a_profile["pressure_point_adv"]
+    base_p += a_state["point_streak"] * a_profile["point_streak_adv"] +  b_state["point_streak"] * b_profile["point_streak_adv"]
+    base_p += a_state["pressure_point"] * a_profile["pressure_point_adv"] + b_state["pressure_point"] * b_profile["pressure_point_adv"]
     return(base_p)
 
 #helper functions                
