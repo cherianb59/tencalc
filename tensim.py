@@ -36,6 +36,7 @@ class Match():
     def run_match(self):
        # print("playing_match")
         match_result = 0 
+        #TODO make this defined in Match initialisation
         self.a.state["service"] = True
         self.b.state["service"] = False
         while match_result == 0:
@@ -69,7 +70,7 @@ class Match():
         game_result =  0 
         while game_result == 0:
             game_result = check_game(self.a.points,self.b.points)
-            if   game_result == 1 or  game_result == -1 :
+            if game_result == 1 or game_result == -1 :
                 #reset points
                 self.a.points = 0
                 self.b.points = 0
@@ -79,16 +80,16 @@ class Match():
                 self.a.state["service"] = not(self.a.state["service"])
                 self.b.state["service"] = not(self.b.state["service"])
                 
-            if   game_result == 1 :
+            if game_result == 1 :
                 self.a.games += 1
             elif game_result == -1 :
                 self.b.games += 1
             else :
                 #print(self.a.state["service"] )
                 if self.a.state["service"] :
-                    probability = calculate_p(self.a.state,self.b.state,self.a.profile,self.b.profile)
+                    probability = calculate_p(self.a,self.b)
                 else :
-                    probability = 1 - calculate_p(self.b.state,self.a.state,self.b.profile,self.a.profile)
+                    probability = 1 - calculate_p(self.b,self.a)
                 point = run_point(probability)                        
                 if point == 1 : 
                     self.a.points += 1 
@@ -99,16 +100,34 @@ class Match():
                     self.a.state["point_streak"] = 0
                     self.b.state["point_streak"] = 1
 
-def calculate_p(a_state, b_state,a_profile,b_profile):    
-    base_p = a_profile["win_serve_p"] 
-    base_p += a_state["point_streak"] * a_profile["point_streak_adv"] +  b_state["point_streak"] * b_profile["point_streak_adv"]
-    base_p += a_state["pressure_point"] * a_profile["pressure_point_adv"] + b_state["pressure_point"] * b_profile["pressure_point_adv"]
-    return(base_p)
-
 #helper functions                
+def calculate_p(server, receiver):    
+  '''
+Calculate the probability of the server winning a service point
+  '''
+  
+  base_p = server.profile["win_serve_p"] 
+  base_p += server.state["point_streak"] * server.profile["point_streak_adv"] +  receiver.state["point_streak"] * receiver.profile["point_streak_adv"]
+  base_p += server.state["pressure_point"] * server.profile["pressure_point_adv"] + receiver.state["pressure_point"] * receiver.profile["pressure_point_adv"]
+  return(base_p)
+
+
+#a point is just a roll of the dice
 def run_point(p):
     #print(p)
-    return(int(random.uniform(0,1)<max(min(p,1),0)))
+    return(int(random.uniform(0,1)<p))
+
+def determine_pressure_point(server, receiver):    
+  '''
+Determine if the current point is a pressure point, a pressure point is a break point or set point
+  '''
+  #break point (also covers set points for receiver) last condition ensures non tiebreaker games
+  if receiver.points >= 3 and receiver.points > server.points and server.games <= 5 : return(True)
+  #set point for server (non tiebreaker)
+  if server.points >= 3 and server.games >= 5 and server.games > receiver.games: return(True)
+  #set point (tiebreaker) covers both server and receiver
+  if (server.games == 6 and receiver.games == 6) and (server.points >=6 or reciever.points >= 6 ) and (server.points !=reciever.points): return(True)
+  return(False)
     
 #winning conditions 
 def check_game(a_set,b_set):
