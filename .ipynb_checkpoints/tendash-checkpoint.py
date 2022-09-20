@@ -12,6 +12,12 @@ import numpy as np
 import tensim
 from tenprofiles import *
 
+#TODO change the initial conditions of hte match  e.g. dont have to start simulation at the start of the match
+#TODO add more probability modifiers
+#TODO performance
+#TODO more stats e.g. set distribution, number of dueces, breakpoints
+
+
 server = Flask(__name__)
 server.secret_key ='test'
 

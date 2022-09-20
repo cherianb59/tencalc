@@ -91,7 +91,7 @@ class Match():
                 else :
                     probability = 1 - calculate_p(self.b,self.a)
                 point = run_point(probability)                        
-                if point == 1 : 
+                if point : 
                     self.a.points += 1 
                     self.a.state["point_streak"] = 1
                     self.b.state["point_streak"] = 0
@@ -113,44 +113,44 @@ Calculate the probability of the server winning a service point
 
 
 #a point is just a roll of the dice
-def run_point(p):
+def run_point(p :float) ->bool:
     #print(p)
-    return(int(random.uniform(0,1)<p))
+    return(random.uniform(0,1)<p)
 
-def determine_pressure_point(server, receiver):    
+def determine_pressure_point(server_points :int, server_games :int, receiver_points :int, receiver_games :int) ->bool:    
   '''
 Determine if the current point is a pressure point, a pressure point is a break point or set point
   '''
   #break point (also covers set points for receiver) last condition ensures non tiebreaker games
-  if receiver.points >= 3 and receiver.points > server.points and server.games <= 5 : return(True)
+  if receiver_points >= 3 and receiver_points > server_points and server_games <= 5 : return(True)
   #set point for server (non tiebreaker)
-  if server.points >= 3 and server.games >= 5 and server.games > receiver.games: return(True)
+  if server_points >= 3 and server_games >= 5 and server_games > receiver_games: return(True)
   #set point (tiebreaker) covers both server and receiver
-  if (server.games == 6 and receiver.games == 6) and (server.points >=6 or reciever.points >= 6 ) and (server.points !=reciever.points): return(True)
+  if (server_games == 6 and receiver_games == 6) and (server_points >=6 or reciever_points >= 6 ) and (server_points != reciever_points): return(True)
   return(False)
     
 #winning conditions 
-def check_game(a_set,b_set):
+def check_game(a_set:int,b_set:int) ->int:
     if (a_set-b_set) >= 2 and a_set >= 4 : return(1)
     elif (b_set-a_set) >= 2 and b_set >= 4 : return(-1)
     else: return(0)
 
-def check_tiebreaker_game(a_game,b_game):
+def check_tiebreaker_game(a_game:int,b_game:int)->bool:
     return(a_game == 6 and b_game == 6)
     
-def check_tiebreaker(a_point,b_point):
+def check_tiebreaker(a_point,b_point)->int:
     if (a_point - b_point) >= 2 and a_point >= 7 : return(1)
     elif (b_point - a_point) >= 2 and b_point >= 7 : return(-1)
     else: return(0)
 
-def check_set(a_game,b_game,tiebreaker_flag = True):
+def check_set(a_game :int, b_game :int, tiebreaker_flag:bool = True)->int:
     if   ((a_game - b_game) >= 2 and a_game >= 6) or (tiebreaker_flag  == True and a_game == 7 and b_game == 6) : 
         return(1)
     elif ((b_game-a_game) >= 2 and b_game >= 6) or (tiebreaker_flag  == True and a_game==6 and b_game==7) : 
         return(-1)
     else: return(0)
 
-def check_match(a_set,b_set,set_limit):
+def check_match(a_set :int , b_set :int ,set_limit :int)->int:
     if a_set==set_limit: return(1)
     if b_set==set_limit: return(-1)
     else: return(0)
